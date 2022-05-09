@@ -4,7 +4,7 @@ author: "DI"
 date: "2022/5/9"
 output: html_document
 ---
-
+・05-06回まとめ
 
 leaflet：インタラクティブな地図を作る
 
