@@ -1,0 +1,28 @@
+---
+title: "Untitled"
+author: "DI"
+date: "2022/5/9"
+output: html_document
+---
+
+
+leaflet：インタラクティブな地図を作る
+
+addProviderTiles：裏のタイル
+http://leaflet-extras.github.io/leaflet-providers/preview/で探す
+
+addMarkers(lng = c(-3, 23, 11),：経度
+             lat = c(52, 53, 49), 　：緯度
+add○○で表示形式を選択（できないものも多い）
+
+addと打つと予測で色々出してくれる
+
+|>のパイプは%>%と挙動が違う
+
+knitでHTML形式のインタラクティブな地図ができる
+
+同じ関数名が存在したら○○	::関数名
+
+st_drop_geometryでgeomを消す（地図を書く場合には残す。計算したい場合に消す）
+
+施したい処理を達成するには小分けにして考える
