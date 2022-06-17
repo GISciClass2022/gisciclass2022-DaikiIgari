@@ -1,14 +1,14 @@
 ---
 title: "観光客数と製造品出荷額の関係"
 author: "猪狩 大気"
-date: "2022/6/17"
+date: "2022/6/18"
 output:
   html_document:
     df_print: paged
     theme: flatly
     toc: yes
     toc_float: true
-    keep_md: FALSE
+    keep_md: false
   github_document:
     toc: yes
 fontsize: 11pt
@@ -205,7 +205,7 @@ tmap_arrange(merge_travel_stay_industry2, merge_travel_day_industry2)
 
 ```{r fig1, echo=FALSE, out.width="100%"}
 
-knitr::include_graphics("./final_report_files/figure-html/stay_day-1.png")
+knitr::include_graphics("stay_day.png")
 
 ```
 $$図1　宿泊ありと日帰りの観光客数の散布図$$
@@ -215,7 +215,7 @@ $$図1　宿泊ありと日帰りの観光客数の散布図$$
 
 ```{r fig2, echo=FALSE, out.width="100%"}
 
-knitr::include_graphics("./final_report_files/figure-html/stay_industry-2.png")
+knitr::include_graphics("stay-industry.png")
 
 ```
 
@@ -226,7 +226,7 @@ $$図2　宿泊ありの観光客数と製造品出荷額等の散布図$$
 
 ```{r fig3,  echo=FALSE, out.width="100%"}
 
-knitr::include_graphics("./final_report_files/figure-html/day_industry-2.png")
+knitr::include_graphics("day_industry.png")
 
 ```
 
@@ -264,7 +264,7 @@ data1
 ## 7. Graphic Abstract
 ```{r fig4, echo=FALSE, out.width="100%"}
 
-knitr::include_graphics("./final_report_files/figure-html/arrange_map-1.png")
+knitr::include_graphics("arrange_map.png")
 
 ```
 

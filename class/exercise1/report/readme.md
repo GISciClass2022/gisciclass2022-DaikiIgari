@@ -9,5 +9,3 @@ FEH_00601010_220524233110.csv:観光客データの元データ
 Japan-industries2016.csv:工業関連のデータ
 
 2017-k4-data.xls:工業関連の元データ
-
-画像ファイルはfinal_report_files/figure-html内にある。

@@ -1,7 +1,7 @@
 ---
 title: "観光客数と製造品出荷額の関係"
 author: "猪狩 大気"
-date: "2022/6/17"
+date: "2022/6/18"
 output:
   html_document:
     df_print: paged
@@ -19,7 +19,7 @@ bibliography: bibliography.bib
 
 
 ```r
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = TRUE)
 install.packages("kableExtra")
 ```
 
@@ -34,12 +34,24 @@ install.packages("kableExtra")
 ```
 
 
+```r
+library(sf)
+```
+
 ```
 ## Linking to GEOS 3.8.0, GDAL 3.0.4, PROJ 6.3.1
 ```
 
+```r
+library(raster)
+```
+
 ```
 ## Loading required package: sp
+```
+
+```r
+library(tidyverse)
 ```
 
 ```
@@ -65,6 +77,16 @@ install.packages("kableExtra")
 ## x dplyr::select()  masks raster::select()
 ```
 
+```r
+library(dplyr)
+library(spData)
+library(tmap) 
+library(leaflet)
+library(ggplot2) 
+library(tmaptools)
+library(kableExtra)
+```
+
 ```
 ## 
 ## Attaching package: 'kableExtra'
@@ -77,6 +99,10 @@ install.packages("kableExtra")
 ```
 
 
+```r
+test_adm = st_read("JPN_adm1.shp") #日本の行政区分のデータ
+```
+
 ```
 ## Reading layer `JPN_adm1' from data source `/home/rstudio/class/exercise1/report/JPN_adm1.shp' using driver `ESRI Shapefile'
 ## Simple feature collection with 47 features and 9 fields
@@ -84,6 +110,10 @@ install.packages("kableExtra")
 ## Dimension:     XY
 ## Bounding box:  xmin: 122.9332 ymin: 24.04542 xmax: 153.9869 ymax: 45.52279
 ## Geodetic CRS:  WGS 84
+```
+
+```r
+travel <- read_csv("Japan-travel.csv") ##観光客数のデータ（単位：千人）
 ```
 
 ```
@@ -101,6 +131,10 @@ install.packages("kableExtra")
 ##   帰省_知人訪問等_日帰り = col_number(),
 ##   出張_業務_日帰り = col_character()
 ## )
+```
+
+```r
+industry <- read_csv("Japan-industries2016.csv")　##工業品出荷額等のデータ
 ```
 
 ```
@@ -128,9 +162,42 @@ install.packages("kableExtra")
 
 
 
+```r
+#宿泊ありと工業について
+
+JPN_travel_2016 <- left_join(test_adm, travel) #行政データと観光客数を統合
+```
+
 ```
 ## Joining, by = "NL_NAME_1"
+```
+
+```r
+JPN_industry_2016 <- left_join(test_adm, industry)　#行政データと工業データを統合
+```
+
+```
 ## Joining, by = "NL_NAME_1"
+```
+
+```r
+JPN_travel_stay_select <- JPN_travel_2016 %>%
+  dplyr::select(NL_NAME_1,観光_レクリエーション_宿泊)
+
+JPN_industry_select <- JPN_industry_2016 %>%
+  dplyr::select(NL_NAME_1, 製造品出荷額等)
+
+
+#工業データの地図化
+ merge_travel_stay_industry <- tm_shape(JPN_travel_stay_select) +
+    tm_polygons("観光_レクリエーション_宿泊", style = "quantile", n = 7, palette = "Greens", title = "観光・レクリエーション（宿泊） [千人]" ) +
+    tm_borders() +
+    tm_shape(JPN_industry_select) + ##工業生産額のマップ
+    tm_dots("製造品出荷額等", n = 7, palette = "Reds", style = "quantile", size = 0.1, title = "製造品出荷額等　[百万円]") +
+    tm_borders() +
+    tm_layout(title = "都道府県別の観光客数(宿泊)と工業生産出荷額", title.size = 0.8, legend.frame = TRUE, legend.width = 0.35)
+
+merge_travel_stay_industry
 ```
 
 ```
@@ -141,18 +208,52 @@ install.packages("kableExtra")
 
 ![](final_report_files/figure-html/stay_industry-1.png)<!-- -->
 
+```r
+#値の範囲
+range(JPN_travel_stay_select$観光_レクリエーション_宿泊)
+```
+
 ```
 ## [1]   757 11487
+```
+
+```r
+range(JPN_industry_select$製造品出荷額等)
 ```
 
 ```
 ## [1]   448460 44909000
 ```
 
+```r
+#値の中央値
+median_travel_stay <- median(JPN_travel_stay_select$観光_レクリエーション_宿泊)
+median_industry <-median(JPN_industry_select$製造品出荷額等)
+
+#値の平均値
+mean_travel_stay <- mean(JPN_travel_stay_select$観光_レクリエーション_宿泊)
+mean_industry <- mean(JPN_industry_select$製造品出荷額等)
+
+#値の分散
+var_travel_stay <- var(JPN_travel_stay_select$観光_レクリエーション_宿泊)
+var_industry <- (JPN_industry_select$製造品出荷額等)
+
+##散布図と相関係数
+plot(JPN_travel_stay_select$観光_レクリエーション_宿泊, JPN_industry_select$製造品出荷額等, xlab = "観光・レクリエーション（宿泊） [千人]", ylab = "製造品出荷額等　[百万円]")
+```
+
 ![](final_report_files/figure-html/stay_industry-2.png)<!-- -->
+
+```r
+cor(JPN_travel_stay_select$観光_レクリエーション_宿泊, JPN_industry_select$製造品出荷額等)
+```
 
 ```
 ## [1] 0.3346684
+```
+
+```r
+cor.test(JPN_travel_stay_select$観光_レクリエーション_宿泊, JPN_industry_select$製造品出荷額等)
 ```
 
 ```
@@ -171,6 +272,23 @@ install.packages("kableExtra")
 
 
 
+```r
+#日帰りと工業について
+
+JPN_travel_day_select <- JPN_travel_2016 %>%
+  dplyr::select(NL_NAME_1,観光_レクリエーション_日帰り)
+
+  merge_travel_day_industry <- tm_shape(JPN_travel_day_select) + ##観光客数別のマップ
+      tm_polygons("観光_レクリエーション_日帰り", style = "quantile", n = 7, palette = "Greens", title = "観光・レクリエーション（日帰り）　[千人]" ) +
+      tm_borders() +
+      tm_shape(JPN_industry_select) + ##工業生産額のマップ
+      tm_dots("製造品出荷額等", n = 7, palette = "Reds", style = "quantile", size = 0.1, title = "製造品出荷額等　[百万円]") +
+      tm_borders() +
+      tm_layout(title = "都道府県別の観光客数(日帰り)と工業生産出荷額", title.size = 0.8, legend.frame = TRUE, legend.width = 0.35)
+
+merge_travel_day_industry
+```
+
 ```
 ## Warning: One tm layer group has duplicated layer types, which are omitted. To
 ## draw multiple layers of the same type, use multiple layer groups (i.e. specify
@@ -179,18 +297,52 @@ install.packages("kableExtra")
 
 ![](final_report_files/figure-html/day_industry-1.png)<!-- -->
 
+```r
+#値の範囲
+range(JPN_travel_day_select$観光_レクリエーション_日帰り)
+```
+
 ```
 ## [1]   450 16628
+```
+
+```r
+range(JPN_industry_select$製造品出荷額等)
 ```
 
 ```
 ## [1]   448460 44909000
 ```
 
+```r
+#値の中央値
+median_travel_day <- median(JPN_travel_day_select$観光_レクリエーション_日帰り)
+median_industry <-median(JPN_industry_select$製造品出荷額等)
+
+#値の平均値
+mean_travel_day <- mean(JPN_travel_day_select$観光_レクリエーション_日帰り)
+mean_industry <- mean(JPN_industry_select$製造品出荷額等)
+
+#値の分散
+var_travel_day <- var(JPN_travel_day_select$観光_レクリエーション_日帰り)
+var_industry <- (JPN_industry_select$製造品出荷額等)
+
+##散布図と相関係数
+plot(JPN_travel_day_select$観光_レクリエーション_日帰り, JPN_industry_select$製造品出荷額等, xlab = "観光・レクリエーション（日帰り） [千人]", ylab = "製造品出荷額等　[百万円]")
+```
+
 ![](final_report_files/figure-html/day_industry-2.png)<!-- -->
+
+```r
+cor(JPN_travel_day_select$観光_レクリエーション_日帰り, JPN_industry_select$製造品出荷額等)
+```
 
 ```
 ## [1] 0.5679527
+```
+
+```r
+cor.test(JPN_travel_day_select$観光_レクリエーション_日帰り, JPN_industry_select$製造品出荷額等)
 ```
 
 ```
@@ -208,10 +360,27 @@ install.packages("kableExtra")
 ```
  
  
+
+```r
+JPN_travel_stay_select <- JPN_travel_2016 %>%
+  dplyr::select(NL_NAME_1,観光_レクリエーション_宿泊)
+
+##散布図と相関係数
+plot(JPN_travel_stay_select$観光_レクリエーション_宿泊, JPN_travel_day_select$観光_レクリエーション_日帰り, xlab = "観光・レクリエーション（宿泊） [千人]", ylab = "観光・レクリエーション（日帰り） [千人]")
+```
+
 ![](final_report_files/figure-html/stay_day-1.png)<!-- -->
+
+```r
+cor(JPN_travel_stay_select$観光_レクリエーション_宿泊, JPN_travel_day_select$観光_レクリエーション_日帰り)
+```
 
 ```
 ## [1] 0.8157327
+```
+
+```r
+cor.test(JPN_travel_stay_select$観光_レクリエーション_宿泊, JPN_travel_day_select$観光_レクリエーション_日帰り)
 ```
 
 ```
@@ -228,6 +397,29 @@ install.packages("kableExtra")
 ## 0.8157327
 ```
 
+
+```r
+merge_travel_stay_industry2 <- tm_shape(JPN_travel_stay_select) + ##観光客数別のマップ
+    tm_polygons("観光_レクリエーション_宿泊", style = "quantile", n = 7, palette = "Greens", title = "観光・レクリエーション（宿泊）\n[千人]" ) +
+    tm_borders() +
+    tm_shape(JPN_industry_select) + ##工業生産額のマップ
+    tm_dots("製造品出荷額等", n = 7, palette = "Reds", style = "quantile", size = 0.1, title = "製造品出荷額等　[百万円]") +
+    tm_borders() +
+    tm_layout(title = "都道府県別の観光客数(宿泊)と工業生産出荷額", title.size = 0.8, legend.frame = TRUE, legend.width = 0.35)
+
+
+merge_travel_day_industry2 <- tm_shape(JPN_travel_day_select) + ##観光客数別のマップ
+      tm_polygons("観光_レクリエーション_日帰り", style = "quantile", n = 7, palette = "Greens", title = "観光・レクリエーション（日帰り）\n[千人]" , cex = 0.8) +
+      tm_borders() +
+      tm_shape(JPN_industry_select) + ##工業生産額のマップ
+      tm_dots("製造品出荷額等", n = 7, palette = "Reds", style = "quantile", size = 0.1, title = "製造品出荷額等 [百万円]") +
+      tm_borders() +
+      tm_layout(title = "都道府県別の観光客数(日帰り)と工業生産出荷額", title.size = 0.8, legend.frame = TRUE, legend.width = 0.35)
+
+
+
+tmap_arrange(merge_travel_stay_industry2, merge_travel_day_industry2)
+```
 
 ```
 ## Warning: One tm layer group has duplicated layer types, which are omitted. To
@@ -282,20 +474,20 @@ install.packages("kableExtra")
 ## 4. 結果
 最初に宿泊ありと日帰りの観光客数の比較を行う。この2つのデータの相関係数は0.8157327となった。また散布図を図1に示す。散布図からも宿泊ありと日帰りには強い正の相関があることが分かる。また、宿泊ありと日帰りに共通して観光客数が多い県と少ない県の差が大きいことが分かる。
 
-<img src="./final_report_files/figure-html/stay_day-1.png" width="100%" />
+<img src="stay_day.png" width="100%" />
 $$図1　宿泊ありと日帰りの観光客数の散布図$$
 
 次に宿泊ありの観光客数と製造品出荷額等についてである。相関係数は0.3346684と弱いながらも正の相関が見られた。散布図を図2に示す。日帰りの観光客数と製造品出荷額等の相関係数は0.5679527と正の相関が見られた。
 
 
-<img src="./final_report_files/figure-html/stay_industry-2.png" width="100%" />
+<img src="stay-industry.png" width="100%" />
 
 $$図2　宿泊ありの観光客数と製造品出荷額等の散布図$$
 
 最後に日帰りの観光客数と製造品出荷額等についてである。相関係数は0.5679527と正の相関が見られた。また、散布図を図3に示す。
 
 
-<img src="./final_report_files/figure-html/day_industry-2.png" width="100%" />
+<img src="day_industry.png" width="100%" />
 
 $$図3　日帰りの観光客数と製造品出荷額等の散布図$$
 
@@ -364,10 +556,10 @@ data1
 ## 7. Graphic Abstract
 
 ```r
-knitr::include_graphics("./final_report_files/figure-html/arrange_map-1.png")
+knitr::include_graphics("arrange_map.png")
 ```
 
-<img src="./final_report_files/figure-html/arrange_map-1.png" width="100%" />
+<img src="arrange_map.png" width="100%" />
 
 
 ## 8. 参考文献
