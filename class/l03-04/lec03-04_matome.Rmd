@@ -1,0 +1,70 @@
+---
+title: "lec03-04"
+author: "DI"
+date: "2022/4/24"
+output: html_document
+---
+
+```{r 03-04}
+
+
+```
+
+## 第3回4回の復習
+左上の＋でmdファイルやHTMLを作る
+ファイル名と著者名（自分）を書いてファイル形式を選択
+コンソールでctrl+Enterで1行分実行（mdも一緒）
+#```{r ***(名前)}
+
+ここにコードを書く
+
+#```
+
+保存すると別窓で頁が開く
+
+困ったらヘルプ ?**
+
+<-で代入
+文字列はpasteで合体
+よく分からないならcodes.Rmdを実行する
+
+classで型を調べる
+is.**でその型かどうか
+as.**(..)で..を**の型に変換
+
+matrix(1:n, nrow=m, byrow=TRUE)
+array(1:n, dim=c(2,4,2))
+2,4の行列が2つ
+
+listの中身はstr(リスト名)　ストラクチャ
+
+data frame
+
+p.height <- c(180,155,160,167,181)
+p.weight <- c(65,50,52,58,70)
+p.names <- c("Tanaka", "Hayashi", "Satou", "Kobayashi", "Arita")
+
+dataf <- data.frame(height = p.height,
+                    weight = p.weight,
+                    names = p.names)
+datafで表示
+
+dim(dataf)で形
+str(dataf)で中身
+
+右のImport Datasetでデータの取り込み
+
+読み込んだデータ flower
+
+flower[1,4] 1,4の要素を取り出す
+flower[,c(1,4)]　行は全て列は1と4列を取り出す
+flower[c(1,4), ]　1と4列、列は全てをとりだす
+
+ctrl+shift+mでパイプ
+
+filter(データ名,したい処理)
+selectも一緒
+
+データに列を追加
+mutate(名前=処理)
+

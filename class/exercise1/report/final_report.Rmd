@@ -1,16 +1,16 @@
 ---
-title: "GIScience class final report"
-author: "YOUR NAME"
-date: "SUBMISSION DATE"
+title: "観光客数と製造品出荷額の関係"
+author: "猪狩 大気"
+date: "2022/6/18"
 output:
   html_document:
     df_print: paged
     theme: flatly
     toc: yes
     toc_float: true
+    keep_md: false
   github_document:
     toc: yes
-subtitle: "テーマ or タイトル"
 fontsize: 11pt
 linestretch: 1.2
 link-citations: yes
@@ -18,52 +18,255 @@ bibliography: bibliography.bib
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
+install.packages("kableExtra")
 ```
 
+```{r library, include=FALSE}
+
+library(sf)
+library(raster)
+library(tidyverse)
+library(dplyr)
+library(spData)
+library(tmap) 
+library(leaflet)
+library(ggplot2) 
+library(tmaptools)
+library(kableExtra)
+
+
+
+```
+
+```{r read_data, include=FALSE}
+
+test_adm = st_read("JPN_adm1.shp") #日本の行政区分のデータ
+
+travel <- read_csv("Japan-travel.csv") ##観光客数のデータ（単位：千人）
+
+industry <- read_csv("Japan-industries2016.csv")　##工業品出荷額等のデータ
+
+```
+
+
+```{r stay_industry, include=FALSE}
+
+#宿泊ありと工業について
+
+JPN_travel_2016 <- left_join(test_adm, travel) #行政データと観光客数を統合
+
+JPN_industry_2016 <- left_join(test_adm, industry)　#行政データと工業データを統合
+
+JPN_travel_stay_select <- JPN_travel_2016 %>%
+  dplyr::select(NL_NAME_1,観光_レクリエーション_宿泊)
+
+JPN_industry_select <- JPN_industry_2016 %>%
+  dplyr::select(NL_NAME_1, 製造品出荷額等)
+
+
+#工業データの地図化
+ merge_travel_stay_industry <- tm_shape(JPN_travel_stay_select) +
+    tm_polygons("観光_レクリエーション_宿泊", style = "quantile", n = 7, palette = "Greens", title = "観光・レクリエーション（宿泊） [千人]" ) +
+    tm_borders() +
+    tm_shape(JPN_industry_select) + ##工業生産額のマップ
+    tm_dots("製造品出荷額等", n = 7, palette = "Reds", style = "quantile", size = 0.1, title = "製造品出荷額等　[百万円]") +
+    tm_borders() +
+    tm_layout(title = "都道府県別の観光客数(宿泊)と工業生産出荷額", title.size = 0.8, legend.frame = TRUE, legend.width = 0.35)
+
+merge_travel_stay_industry
+
+
+#値の範囲
+range(JPN_travel_stay_select$観光_レクリエーション_宿泊)
+range(JPN_industry_select$製造品出荷額等)
+
+#値の中央値
+median_travel_stay <- median(JPN_travel_stay_select$観光_レクリエーション_宿泊)
+median_industry <-median(JPN_industry_select$製造品出荷額等)
+
+#値の平均値
+mean_travel_stay <- mean(JPN_travel_stay_select$観光_レクリエーション_宿泊)
+mean_industry <- mean(JPN_industry_select$製造品出荷額等)
+
+#値の分散
+var_travel_stay <- var(JPN_travel_stay_select$観光_レクリエーション_宿泊)
+var_industry <- (JPN_industry_select$製造品出荷額等)
+
+##散布図と相関係数
+plot(JPN_travel_stay_select$観光_レクリエーション_宿泊, JPN_industry_select$製造品出荷額等, xlab = "観光・レクリエーション（宿泊） [千人]", ylab = "製造品出荷額等　[百万円]")
+cor(JPN_travel_stay_select$観光_レクリエーション_宿泊, JPN_industry_select$製造品出荷額等)
+cor.test(JPN_travel_stay_select$観光_レクリエーション_宿泊, JPN_industry_select$製造品出荷額等)
+
+```
+
+
+```{r day_industry, include=FALSE}
+
+#日帰りと工業について
+
+JPN_travel_day_select <- JPN_travel_2016 %>%
+  dplyr::select(NL_NAME_1,観光_レクリエーション_日帰り)
+
+  merge_travel_day_industry <- tm_shape(JPN_travel_day_select) + ##観光客数別のマップ
+      tm_polygons("観光_レクリエーション_日帰り", style = "quantile", n = 7, palette = "Greens", title = "観光・レクリエーション（日帰り）　[千人]" ) +
+      tm_borders() +
+      tm_shape(JPN_industry_select) + ##工業生産額のマップ
+      tm_dots("製造品出荷額等", n = 7, palette = "Reds", style = "quantile", size = 0.1, title = "製造品出荷額等　[百万円]") +
+      tm_borders() +
+      tm_layout(title = "都道府県別の観光客数(日帰り)と工業生産出荷額", title.size = 0.8, legend.frame = TRUE, legend.width = 0.35)
+
+merge_travel_day_industry
+
+#値の範囲
+range(JPN_travel_day_select$観光_レクリエーション_日帰り)
+range(JPN_industry_select$製造品出荷額等)
+
+#値の中央値
+median_travel_day <- median(JPN_travel_day_select$観光_レクリエーション_日帰り)
+median_industry <-median(JPN_industry_select$製造品出荷額等)
+
+#値の平均値
+mean_travel_day <- mean(JPN_travel_day_select$観光_レクリエーション_日帰り)
+mean_industry <- mean(JPN_industry_select$製造品出荷額等)
+
+#値の分散
+var_travel_day <- var(JPN_travel_day_select$観光_レクリエーション_日帰り)
+var_industry <- (JPN_industry_select$製造品出荷額等)
+
+##散布図と相関係数
+plot(JPN_travel_day_select$観光_レクリエーション_日帰り, JPN_industry_select$製造品出荷額等, xlab = "観光・レクリエーション（日帰り） [千人]", ylab = "製造品出荷額等　[百万円]")
+cor(JPN_travel_day_select$観光_レクリエーション_日帰り, JPN_industry_select$製造品出荷額等)
+cor.test(JPN_travel_day_select$観光_レクリエーション_日帰り, JPN_industry_select$製造品出荷額等)
+
+
+```
+ 
+ 
+```{r stay_day, include=FALSE}
+
+JPN_travel_stay_select <- JPN_travel_2016 %>%
+  dplyr::select(NL_NAME_1,観光_レクリエーション_宿泊)
+
+##散布図と相関係数
+plot(JPN_travel_stay_select$観光_レクリエーション_宿泊, JPN_travel_day_select$観光_レクリエーション_日帰り, xlab = "観光・レクリエーション（宿泊） [千人]", ylab = "観光・レクリエーション（日帰り） [千人]")
+cor(JPN_travel_stay_select$観光_レクリエーション_宿泊, JPN_travel_day_select$観光_レクリエーション_日帰り)
+cor.test(JPN_travel_stay_select$観光_レクリエーション_宿泊, JPN_travel_day_select$観光_レクリエーション_日帰り)
+
+```
+
+```{r arrange_map, include=FALSE}
+
+merge_travel_stay_industry2 <- tm_shape(JPN_travel_stay_select) + ##観光客数別のマップ
+    tm_polygons("観光_レクリエーション_宿泊", style = "quantile", n = 7, palette = "Greens", title = "観光・レクリエーション（宿泊）\n[千人]" ) +
+    tm_borders() +
+    tm_shape(JPN_industry_select) + ##工業生産額のマップ
+    tm_dots("製造品出荷額等", n = 7, palette = "Reds", style = "quantile", size = 0.1, title = "製造品出荷額等　[百万円]") +
+    tm_borders() +
+    tm_layout(title = "都道府県別の観光客数(宿泊)と工業生産出荷額", title.size = 0.8, legend.frame = TRUE, legend.width = 0.35)
+
+
+merge_travel_day_industry2 <- tm_shape(JPN_travel_day_select) + ##観光客数別のマップ
+      tm_polygons("観光_レクリエーション_日帰り", style = "quantile", n = 7, palette = "Greens", title = "観光・レクリエーション（日帰り）\n[千人]" , cex = 0.8) +
+      tm_borders() +
+      tm_shape(JPN_industry_select) + ##工業生産額のマップ
+      tm_dots("製造品出荷額等", n = 7, palette = "Reds", style = "quantile", size = 0.1, title = "製造品出荷額等 [百万円]") +
+      tm_borders() +
+      tm_layout(title = "都道府県別の観光客数(日帰り)と工業生産出荷額", title.size = 0.8, legend.frame = TRUE, legend.width = 0.35)
+
+
+
+tmap_arrange(merge_travel_stay_industry2, merge_travel_day_industry2)
+
+```
+
+
+
 ## 0. 要旨
-AAAAAAAAAAAAAAAA. 
-BBBBBBBBBBBBBBBB. 
-CCCCCCCCCCCCCCC.   
+日本は工業で経済を成長させてきた過去があり、各都道府県で特色のある工業を行っている。また、観光業も盛んになっており各都道府県が様々な施策に取り組んでいる。工業生産額や観光客数などの数字は各都道府県ごとに異なっている。工業の盛んさと観光の盛んさには一定の関係がみいだ工業で経済を成長させてきた過去があり、各都道府県で特色のある工業を行っている。また、観光業も盛んになっており各都道府県が様々な施策に取り組んでいる。工業生産額や観光客数などは自治体にとっても税収などの観点から重要なデータである。何かしらの影響で観光業が打撃を受けても工業が盛んならばそれで補えたり、工業がそこまで盛んでなければ打撃は大きなものとなる。そこで、今回は工業出荷額と観光客数の相関関係について調べた。またその過程で宿泊ありと日帰りの場合の観光客数の差についても調査した。結果は、工業出荷額と観光客数には、宿泊ありと日帰り共に正の相関があると見られた。宿泊ありより日帰りの方が強い相関があった。今回の結果は工業と観光業に関連がある可能性を示唆している。前述の通り、観光業が打撃を受けた際に工業で補えるか、また逆に工業が衰退したときに観光業はどのような影響を受けるか、などを詳細に調べることができれば、より安定した行政運営ができるかもしれない。
 
 
-
-<br>
-<br>
-  
-  下のフォーマットは一例です。　
-レポートの構成は多少替えても大丈夫です。
 
 ## 1. はじめに
 ### 1.1 背景
-XXXXXXXX。 
-Toblerは... [@tobler1970computer]。
-XXXXXXXXXXXX。  
+日本では工業が経済を担っている大きな柱の1つであると考えられる。また、観光業も同様でインバウンドの経済への影響力は目覚ましいものがある。一方で、近年では自然災害が多発し、土砂災害などで観光地に行くことができず、その地の観光業に大きな影響を与える事例も増えてきている。自治体は観光業で失った税収分などを工業など他で補わなければならない。今回の調査で2つのデータ間に関連性が確認できればあ用な政策に活かせる可能性がある。
 
 ### 1.2 目的
-XXXXXXXX。   
+今回は工業の中でも工業生産額出荷額に、観光業の中でも観光客数に着目して調査を行った。この2つのデータに相関があるかどうかを調べた。また、視覚的にもそれらの関連性があるかを見いだせるかを調査した。
 
 ## 2. 手法
-XXXXXXXX。
-XXXXXXXXXXXX。  
+工業生産出荷額と観光客数のデータに関連性があるかどうかの可能性を調べるために、それらのデータ間の相関係数を求めた。また、視覚的にデータを観察するために2つにデータを1つの地図上で表した。また、宿泊ありと日帰りの観光客数のデータの違いについても中央値や平均値を比較することで調べた。
 
 ## 3. データ
-XXXXXXXX。
-XXXXXXXXXXXX。  
+今回使用したデータは工業生産出荷額が経済産業省が発表した2016年のデータ（https://www.meti.go.jp/statistics/tyo/kougyo/result-2/h29/kakuho/chiiki/index.html） をもとに加工したものである。なお、今回は製造品出荷額等のみに着目した。観光客数のデータはe-Statの2016年のデータ（https://www.e-stat.go.jp/dbview?sid=0003300795） をもとに加工したものである。なお、観光客数のデータは宿泊と日帰りに分かれていたが、今回はそれぞれに着目し、それぞれのデータと製造品出荷額等との関連性を調べた。なお、目的については観光・レクリエーションのみに着目した。
 
 ## 4. 結果
-XXXXXXXX。
-XXXXXXXXXXXX。  
+最初に宿泊ありと日帰りの観光客数の比較を行う。この2つのデータの相関係数は0.8157327となった。また散布図を図1に示す。散布図からも宿泊ありと日帰りには強い正の相関があることが分かる。また、宿泊ありと日帰りに共通して観光客数が多い県と少ない県の差が大きいことが分かる。
+
+```{r fig1, echo=FALSE, out.width="100%"}
+
+knitr::include_graphics("stay_day.png")
+
+```
+$$図1　宿泊ありと日帰りの観光客数の散布図$$
+
+次に宿泊ありの観光客数と製造品出荷額等についてである。相関係数は0.3346684と弱いながらも正の相関が見られた。散布図を図2に示す。日帰りの観光客数と製造品出荷額等の相関係数は0.5679527と正の相関が見られた。
+
+
+```{r fig2, echo=FALSE, out.width="100%"}
+
+knitr::include_graphics("stay-industry.png")
+
+```
+
+$$図2　宿泊ありの観光客数と製造品出荷額等の散布図$$
+
+最後に日帰りの観光客数と製造品出荷額等についてである。相関係数は0.5679527と正の相関が見られた。また、散布図を図3に示す。
+
+
+```{r fig3,  echo=FALSE, out.width="100%"}
+
+knitr::include_graphics("day_industry.png")
+
+```
+
+$$図3　日帰りの観光客数と製造品出荷額等の散布図$$
+
+また、2つのデータを1つの地図で表した結果は、製造品出荷額等が高く観光客数も多い県と製造品出荷額等が高く観光客数は低い県があり、またその逆もあるため、視覚的に明らかな関連があるとは言えなかった。最後に各データの指標値を表1に示す。
+
+
+$$表1　各種データの指標値$$
+
+```{r table, echo=FALSE}
+table_data <- matrix(0, 4, 5)
+
+table_data[1,] <- c("","値の範囲","平均値","中央値","製造品出荷額等との相関係数")
+table_data[2,] <- c("観光客数（宿泊あり） [千人]","757-11487",3722.106,2970,0.3346684)
+table_data[3,] <- c("観光客数（日帰り） [千人]","450-16628", 4388.064,3219,0.5679527)
+table_data[4,] <- c("製造品出荷額等 [百万円]","448460-44909000",6429472,4112832,"")
+
+data1 <- table_data %>%
+  kbl() %>%
+  kable_material(c("striped", "hover"))
+
+data1
+
+```
+
+
 
 ## 5. 考察
-XXXXXXXX。
-XXXXXXXXXXXX。  
+宿泊ありの観光客と日帰りの観光客、製造品出荷額等のデータはいずれも最大値と最小値に差があることが分かった。また、それぞれのデータの中央値と平均値、散布図から考えると、大きな値を持つデータが少なく、多くは値が小さいことが分かる。これは、相関係数に影響を及ぼしていると考えられる。仮に、値の大きなデータを削除して相関係数を計算すると、値は変わると考えられる。相関係数を計算した結果からは宿泊する観光客数と製造品出荷額等より、日帰りの観光客数の方が強い相関があることがわかる。これは、日帰りで行く旅行は身近な場所でも行けるため、弱い相関が見られたが、これは値が大きなデータが存在するためであると思われる。データの中には工業生産出荷額や観光客数が飛び抜けて大きなものがあり、これが相関係数に大きく影響を及ぼしたと考えられる。このデータが存在しないと考えると相関係数の値は小さくなり、相関が弱くなると考えられる。
 
 ## 6. 結論
-XXXXXXXX。
-XXXXXXXXXXXX。  
+今回は各都道府県別の工業生産出荷額と観光客数について関連性を調査した。これらのデータ間に弱い相関が見られたが、それはある種の外れ値に影響された結果で実際にはそこまで相関がないと考えられる。今回の調査では工業生産出荷額と観光客数の間に相関がある可能性があることが分かったのみで実際の関連性については明らかにできなかった。
 
 ## 7. Graphic Abstract
-レポートを表す１枚の図をここで示す。
+```{r fig4, echo=FALSE, out.width="100%"}
+
+knitr::include_graphics("arrange_map.png")
+
+```
+
 
 ## 8. 参考文献

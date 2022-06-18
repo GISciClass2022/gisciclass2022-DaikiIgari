@@ -1,0 +1,252 @@
+---
+title: "l05-06"
+author: "DI"
+date: "2022/4/26"
+output: html_document
+---
+
+```{r leaflet map example}
+library(leaflet)
+popup = c("Robin", "Jakub", "Jannes")
+leaflet() %>%
+  addProviderTiles("OpenStreetMap.Mapnik") %>%
+  addCircles(color = "black",
+             lng = c(135, 23, 11),
+             lat = c(35, 53, 49), 
+             popup = popup)
+
+
+```
+
+
+
+
+# chapter 2
+```{r install packeges}
+install.packages("sf")
+install.packages("raster")
+install.packages("spData")
+remotes::install_github("Nowosad/spDataLarge")
+
+```
+
+```{r load packeges}
+library(sf) 
+library(raster) 
+library(spData)        # load geographic data
+library(spDataLarge)   # load larger geographic data
+
+```
+
+```{r world data}
+
+world
+plot(world)
+names(world)
+
+
+
+```
+
+```{r world life_exp}
+
+#world["lifeExp"]　#特定の列を抜き出し
+world %>% dplyr::select(lifeExp) %>% st_drop_geometry() %>% plot()
+#st_drop_geometry(world["lifeExp"])
+
+class(world)
+plot(world["lifeExp"])
+
+
+
+
+```
+
+
+```{r union}
+world_asia = world[world$continent == "Asia", ]
+asia = st_union(world_asia) #地域ごとにまとめる場合など
+#> although coordinates are longitude/latitude, st_union assumes that they are planar
+
+
+#world_asia
+#asia
+
+#plot(world_asia)
+#plot(asia)
+
+plot(world["pop"])
+plot(asia, add = TRUE, color = "black")
+
+
+
+```
+
+```{r multipoint}
+
+multipoint_matrix = rbind(c(5, 2), c(1, 3), c(3, 4), c(3, 2))
+multipoint <- st_multipoint(multipoint_matrix)
+
+multipoint_matrix
+class(multipoint)
+
+```
+
+
+
+```{r 2.2.8}
+
+lnd_point = st_point(c(0.1, 51.5))                 # sfg object
+#class(lnd_point)
+lnd_geom = st_sfc(lnd_point, crs = 4326)           # sfc object
+#class(lnd_geom)
+lnd_attrib = data.frame(                           # data.frame object
+  name = "London",
+  temperature = 25,
+  date = as.Date("2017-06-21")
+  )
+
+lnd_attrib
+
+lnd_sf = st_sf(lnd_attrib, geometry = lnd_geom)    # sf object
+lnd_sf
+
+#plot(lnd_sf) #１個しかデータがないからプロットできない
+```
+
+
+
+
+
+
+```{r 2.3 raster}
+#load data
+raster_filepath = system.file("raster/srtm.tif", package = "spDataLarge")
+new_raster = raster(raster_filepath)
+
+new_raster
+plot(new_raster)
+
+```
+
+```{r brick}
+
+multi_raster_file = system.file("raster/landsat.tif", package = "spDataLarge")
+multi_raster_file
+r_brick = brick(multi_raster_file)
+r_brick
+
+plot(r_brick) #Landsat:衛星写真
+#plotRGB(r_brick[[1:3]]) #何かしらの方法できれいに出力できる
+
+```
+
+
+
+```{r ndvi}
+
+ndvi = (r_brick[[4]] - r_brick[[3]]) / (r_brick[[4]] + r_brick[[3]]) #正規化によって情報を分かりやすく
+
+plot(ndvi)
+```
+
+
+```{r 3.1}
+library(sf)
+library(raster)
+library(dplyr)
+library(stringr) # for working with strings (pattern matching)
+library(tidyr)   # for unite() and separate()
+
+
+
+
+```
+
+
+```{r 3.2.1}
+sel_area = world$area_km2 < 10000
+summary(sel_area)
+small_countries = world[sel_area, ]
+small_countries
+plot(small_countries["pop"]) #["欲しい情報列"]
+
+world %>% 
+  filter(area_km2 < 10000) %>% #worldのarea_km2を抽出
+  dplyr::select(pop) %>%  #抽出したもののpopを更に抽出
+  plot() #プロット
+
+```
+
+
+```{r top n}
+#GDPparCapitalがtop10の国を抽出
+#world_gdp_top10 <- filter(world, top_n(gdpPercap,10)
+#class(world_gdp_top10)
+
+#GDP上位10カ国
+world %>% 
+  top_n(n=10, wt = gdpPercap) %>% 
+  dplyr::select(gdpPercap) %>% 
+  plot()
+
+#GDP下位10カ国
+world %>% 
+  top_n(n=-10, wt = gdpPercap) %>% 
+  dplyr::select(gdpPercap) %>% 
+  plot()
+
+#日本のGDPの順位
+world %>% dplyr::select(name_long,gdpPercap)
+#gdpPercapのソート→日本のものを抽出→上か何番目か
+gdp_sort <- world %>% 
+  arrange(desc(gdpPercap)) %>% 
+  dplyr::select(gdpPercap) %>% 
+  st_drop_geometry()
+                              
+jp_gdp <- world %>% 
+  filter(name_long == "Japan") %>% 
+  dplyr::select(gdpPercap) %>%
+  st_drop_geometry() %>% 
+  as.numeric()
+
+which(gdp_sort == jp_gdp)
+#gdp_sort == jp_gdp
+#plot(world_gdp_top10)
+
+#  top_n(world$gdpPercap,10)
+#plot(world_top10)
+
+
+
+#world %>% 
+#  dplyr::select(gdpPercap) %>% 
+#  top_n(gdpPercap,10) %>%
+
+```
+
+
+
+
+
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
